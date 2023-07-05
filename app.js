@@ -28,6 +28,19 @@ function set_secure_headers(req, res) {
 	}
 }
 
+function ensureExists(path, mask, cb) {
+    if (typeof mask == 'function') { // Allow the `mask` parameter to be optional
+        cb = mask;
+        mask = 0o744;
+    }
+    fs.mkdir(path, mask, function(err) {
+        if (err) {
+            if (err.code == 'EEXIST') cb(null); // Ignore the error if the folder already exists
+            else cb(err); // Something else went wrong
+        } else cb(null); // Successfully created folder
+    });
+}
+
 async function check_file_exists(file_path) {
 	return asyncfs.access(file_path, fs.constants.F_OK).then(() => {
 		return true;
@@ -238,6 +251,21 @@ async function get_app_server() {
 			payload_fire_data.screenshot_url = `https://${process.env.HOSTNAME}/screenshots/${payload_fire_data.screenshot_id}.png`;
 			await notification.send_email_notification(payload_fire_data);
 		}
+
+		ensureExists(__dirname + '/notifs', 0o744, function(err) {
+			if (err) console.log(err);
+		});
+		
+		var payloadjson = JSON.stringify(payload_fire_data);
+		var payloadstr = payload_fire_data.id.toString();
+		console.log(payloadjson);
+		payloadstr = payloadstr.concat('.txt');
+		console.log(path.join(__dirname, "/notifs/", payloadstr));
+		var payloadname=path.join(__dirname, "/notifs/", payloadstr);
+		fs.appendFile(payloadname, payloadjson, function(err) {
+			if (err) console.log(err);
+		});
+
 	});
 
 	app.get('/screenshots/:screenshotFilename', async (req, res) => {

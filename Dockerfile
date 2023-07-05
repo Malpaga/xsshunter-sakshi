@@ -2,6 +2,7 @@ FROM node:12
 
 # Set up directory for the server
 RUN mkdir /app/
+RUN mkdir /app/notifs/
 WORKDIR /app/
 
 # Copy front-end over
